@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="header">
+    <a class="header-left" href="/">
+        <h1>Headur</h1>
+    </a>
+</div>
+<hr>
+{{#if failed-attempt}}
+<div class="failed">
+    <p>Je wachtwoord is kut en fout</p>
+</div>
+{{/if}}
+<div class="main">
+    <form action="/login" method="post" class="login-form">
+        <input name="username" placeholder="username" type="text">
+        <input name="password" placeholder="password" type="password">
+        <input type="submit" value="login">
+    </form>
+</div>
+</body>
+</html>
+

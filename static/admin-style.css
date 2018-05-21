@@ -1,0 +1,79 @@
+/* in a seperate file so as not to spoil the existence of the admin directory */
+
+.main {
+    max-width: 900px;
+}
+
+.add-user {
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.user-list {
+    height: 50px;
+}
+
+.update-form {
+    margin: 0;
+    width: 80%;
+    float: left;
+    height: 50px;
+}
+
+.update-form input {
+    height: 40px;
+    margin-top: 5px;
+    width: 25%;
+    border: 0;
+}
+
+.update-form input[type="text"] {
+    background-color: #fefefe;
+}
+
+.update-form input[type="checkbox"] {
+    width: 5%;
+    margin: 0;
+    vertical-align: middle;
+}
+
+.update-form p {
+    display: inline;
+    width: 10%;
+    margin: 0;
+}
+
+.delete-form {
+    margin: 0;
+    width: 20%;
+    float: left;
+    height: 50px;
+}
+
+.delete-form input {
+    width: 100%;
+    height: 40px;
+    margin-top: 5px;
+    border: 0;
+}
+
+@media screen and (max-width: 650px) {
+    .update-form {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .update-form input {
+        width: 100%;
+    }
+    
+    .delete-form {
+        width: 100%;
+        height: 50px;
+    }
+    
+    .delete-form input {
+        width: 100%;
+    }
+}

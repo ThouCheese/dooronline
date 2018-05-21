@@ -1,0 +1,6 @@
+target
+**/*.rs.bk
+.env
+Rocket.toml
+minify
+home_site.iml
