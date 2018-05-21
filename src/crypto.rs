@@ -18,6 +18,7 @@ pub fn hash_password(password: &str) -> Result<String, String> {
 
 // Verifies a password with Argon2.
 pub fn verify_password(encoded_hash: &str, plaintext_password: &str) -> Result<bool, String> {
+    println!("{}", hash_password(plaintext_password).unwrap());
     let encoded = Encoded::from_u8(encoded_hash.as_bytes())
         .or(Err("Could not read password"))?;
     Ok(encoded.verify(plaintext_password.as_bytes()))
@@ -65,3 +66,11 @@ pub fn validate_user_token(jwt: &str) -> Option<User> {
         .unwrap_or(None)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {
+    }
+}
