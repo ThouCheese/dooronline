@@ -9,6 +9,7 @@ use diesel::RunQueryDsl;
 
 // Hash a password with Argon2.
 pub fn hash_password(password: &str) -> Result<String, String> {
+
     let salt = generate_salt()?;
     let encoded_hash = Encoded::default2i(password.as_bytes(), &salt, &[], &[]).to_u8();
     Ok(String::from_utf8(encoded_hash)
