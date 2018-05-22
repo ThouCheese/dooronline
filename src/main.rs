@@ -178,6 +178,8 @@ mod admin {
 
     #[post("/admin/edituser", data = "<form>")]
     fn edit_user(user: User, form: Form<User>) -> Result<Redirect, Failure> {
+        use diesel::ExpressionMethods;
+
         if user.is_admin {
             let mut model = form.into_inner();
             if user.id != 1 && model.id == 1 {
@@ -194,12 +196,13 @@ mod admin {
                 hash_password(&model.password).unwrap()
             };
 
-            let query = diesel::insert_into(user::table)
-                .values(&model)
-                .on_conflict(user::id)
-                .do_update()
-                .set(&model);
-            let debug = debug_query::<diesel::pg::Pg, _>(&query);
+            let query =
+                diesel::update(user::table.find(model.id))
+                .set((user::username.eq(model.username),
+                      user::password.eq(model.password),
+                      user::is_admin.eq(model.is_admin), ));
+            let query_clone = query.clone();
+            let debug = debug_query::<diesel::pg::Pg, _>(&query_clone);
             println!("The update query: {:?}", debug);
 
             query
