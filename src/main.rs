@@ -115,7 +115,7 @@ mod login {
     #[post("/login", data="<form>")]
     fn post(form: Form<LoginData>, mut cookies: Cookies) -> Result<Redirect, Template> {
         let user: User = user::table
-            .filter(user::username.eq(&form.get().username))
+            .filter(user::username.eq(&form.get().username.to_lowercase()))
             .get_result(&db::get_connection())
             .unwrap();
         if user.validate_password(&form.get().password) {
@@ -145,6 +145,7 @@ mod logout {
 }
 
 mod admin {
+    use diesel::debug_query;
     use super::*;
     use diesel::{RunQueryDsl, QueryDsl};
     use crypto::hash_password;
@@ -182,6 +183,7 @@ mod admin {
             if user.id != 1 && model.id == 1 {
                 return Ok(Redirect::to("/thomas/admin"));
             }
+            model.username = model.username.to_lowercase();
             model.password = if model.password == "" {
                 user::table
                     .find(model.id)
@@ -191,11 +193,16 @@ mod admin {
             } else {
                 hash_password(&model.password).unwrap()
             };
-            diesel::insert_into(user::table)
+
+            let query = diesel::insert_into(user::table)
                 .values(&model)
                 .on_conflict(user::id)
                 .do_update()
-                .set(&model)
+                .set(&model);
+            let debug = debug_query::<diesel::pg::Pg, _>(&query);
+            println!("The update query: {:?}", debug);
+
+            query
                 .execute(&get_connection())
                 .unwrap();
             Ok(Redirect::to("/admin"))
@@ -211,7 +218,10 @@ mod admin {
             if user.id != 1 && user_id == 1 {
                 return Ok(Redirect::to("/thomas/delete"));
             }
-            diesel::delete(user::table.find(user_id))
+            let query = diesel::delete(user::table.find(user_id));
+            let debug = debug_query::<diesel::pg::Pg, _>(&query);
+            println!("The update query: {:?}", debug);
+            query
                 .execute(&get_connection())
                 .unwrap();
             Ok(Redirect::to("/admin"))
