@@ -29,6 +29,9 @@ mod crypto;
 
 #[get("/static/<file..>")]
 fn files(file: PathBuf) -> Option<NamedFile> {
+	if file.to_str().or(None)?.contains("..") {
+		panic!("Attempt to access root directory")
+	}
     NamedFile::open(Path::new("static/").join(file)).ok()
 }
 
@@ -82,7 +85,7 @@ mod index {
     }
 
     #[post("/")]
-    fn post(_user: User) -> Template {
+    fn post(_user: User) -> Result<Template, Failure> {
         let my_led = Pin::new(27);
         my_led.with_exported(|| {
             my_led.set_direction(Direction::Out)?;
@@ -90,8 +93,8 @@ mod index {
             sleep(Duration::from_millis(1000));
             my_led.set_value(0)?;
             Ok(())
-        }).unwrap();
-        Template::render("index", &())
+        }).or(Err(Failure(Status::InternalServerError)))?;
+        Ok(Template::render("index", &()))
     }
 }
 
@@ -117,13 +120,22 @@ mod login {
         let user: User = user::table
             .filter(user::username.eq(&form.get().username.to_lowercase()))
             .get_result(&db::get_connection())
-            .unwrap();
+            .or_else(|_| {
+            		let mut context = HashMap::new();
+            		context.insert("message", "Wow wie is dat uberhaupt?");
+            		Err(Template::render("login", &context))
+            	})?;
         if user.validate_password(&form.get().password) {
-            cookies.add_private(Cookie::new("Authorization", user.create_jwt().unwrap()));
+            cookies.add_private(Cookie::new("Authorization", user.create_jwt()
+            	.or_else(|_| {
+            		let mut context = HashMap::new();
+            		context.insert("message", "Geen logintoken voor jou haha");
+            		Err(Template::render("login", &context))	
+            	})?));
             Ok(Redirect::to("/"))
         } else {
             let mut context = HashMap::new();
-            context.insert("failed-attempt", true);
+            context.insert("message", "Je wachtwoord is kut en fout");
             Err(Template::render("login", &context))
         }
     }
@@ -145,7 +157,6 @@ mod logout {
 }
 
 mod admin {
-    use diesel::debug_query;
     use super::*;
     use diesel::{RunQueryDsl, QueryDsl};
     use crypto::hash_password;
@@ -167,7 +178,8 @@ mod admin {
     #[get("/admin")]
     fn get(user: User) -> Result<Template, Failure> {
         if user.is_admin {
-            let user_vector: Vec<User> = user::table.get_results(&get_connection()).unwrap();
+            let user_vector: Vec<User> = user::table.get_results(&get_connection())
+            	.or(Err(Failure(Status::InternalServerError)))?;
             let mut context = HashMap::new();
             context.insert("users", user_vector);
             Ok(Template::render("admin", &context))
@@ -190,24 +202,20 @@ mod admin {
                 user::table
                     .find(model.id)
                     .get_result::<User>(&get_connection())
-                    .unwrap()
+                    .or(Err(Failure(Status::InternalServerError)))?
                     .password
             } else {
-                hash_password(&model.password).unwrap()
+                hash_password(&model.password)
+                    .or(Err(Failure(Status::InternalServerError)))?
             };
 
-            let query =
-                diesel::update(user::table.find(model.id))
+            
+            diesel::update(user::table.find(model.id))
                 .set((user::username.eq(model.username),
                       user::password.eq(model.password),
-                      user::is_admin.eq(model.is_admin), ));
-            let query_clone = query.clone();
-            let debug = debug_query::<diesel::pg::Pg, _>(&query_clone);
-            println!("The update query: {:?}", debug);
-
-            query
+                      user::is_admin.eq(model.is_admin), ))
                 .execute(&get_connection())
-                .unwrap();
+                .or(Err(Failure(Status::InternalServerError)))?;
             Ok(Redirect::to("/admin"))
         } else {
             Err(Failure(Status::Forbidden))
@@ -221,12 +229,9 @@ mod admin {
             if user.id != 1 && user_id == 1 {
                 return Ok(Redirect::to("/thomas/delete"));
             }
-            let query = diesel::delete(user::table.find(user_id));
-            let debug = debug_query::<diesel::pg::Pg, _>(&query);
-            println!("The update query: {:?}", debug);
-            query
+            diesel::delete(user::table.find(user_id))
                 .execute(&get_connection())
-                .unwrap();
+                .or(Err(Failure(Status::InternalServerError)))?;
             Ok(Redirect::to("/admin"))
         } else {
             Err(Failure(Status::Forbidden))
@@ -238,11 +243,12 @@ mod admin {
         if user.is_admin {
             let mut data = form.into_inner();
             assert_ne!(data.password, "");
-            data.password = hash_password(&data.password).unwrap();
+            data.password = hash_password(&data.password)
+            	.or(Err(Failure(Status::InternalServerError)))?;
             diesel::insert_into(user::table)
                 .values(&data)
                 .execute(&get_connection())
-                .unwrap();
+                .or(Err(Failure(Status::InternalServerError)))?;
             Ok(Redirect::to("/admin"))
         } else {
             Err(Failure(Status::Forbidden))

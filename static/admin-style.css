@@ -10,6 +10,11 @@
     margin-right: auto;
 }
 
+.add-user input {
+    margin-bottom: 10px;
+}
+
+
 .user-list {
     height: 50px;
 }
@@ -58,22 +63,39 @@
     border: 0;
 }
 
+.username {
+    width: 10%;
+}
+
+/*hr {
+    display: none;
+}*/
+
 @media screen and (max-width: 650px) {
+    .main {
+        text-align: left;
+    }
+
     .update-form {
         width: 100%;
         height: 200px;
     }
     
-    .update-form input {
-        width: 100%;
-    }
-    
     .delete-form {
         width: 100%;
         height: 50px;
+        margin-bottom: 20px;
     }
-    
-    .delete-form input {
-        width: 100%;
+
+    .add-user {
+        max-width: 100%;
     }
+
+    .delete-form input, .username, .update-form input {
+        width: 100%
+    }
+
+    /*hr {
+        display: inline;
+    }*/
 }

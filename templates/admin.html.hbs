@@ -5,7 +5,7 @@
     <title>Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/style.min.css">
-    <link rel="stylesheet" href="/static/admin-style.min.css"> <!-- more important -->
+    <link rel="stylesheet" href="/static/admin-style.css"> <!-- more important -->
 </head>
 <body>
 <div class="header">
@@ -34,7 +34,7 @@
         <form action="/admin/edituser" method="post" class="update-form">
             <p>{{this.id}}</p>
             <input type="hidden" name="id" value="{{this.id}}">
-            <input type="text" name="username" value="{{this.username}}" style="width: 15%;">
+            <input type="text" name="username" value="{{this.username}}" class="username">
             <input type="text" name="password" placeholder="password" autocomplete="off">
             <p>admin?</p>
             <input type="checkbox" name="is_admin" {{#if this.is_admin}} checked{{/if}}>
@@ -45,6 +45,7 @@
             <input type="submit" value="delete user">
         </form>
     </div>
+    <hr>
     {{/each}}    
 </div>
 </body>
