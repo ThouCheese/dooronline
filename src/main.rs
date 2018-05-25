@@ -102,7 +102,8 @@ mod index {
         diesel::insert_into(schema::log::table)
             .values(&new_log_entry)
             .execute(&get_connection())
-            .or(Err(Failure(Status::InternalServerError)))?;
+            // .or(Err(Failure(Status::InternalServerError)))?;
+            .unwrap();
 
         let my_led = Pin::new(27);
         my_led.with_exported(|| {
@@ -110,7 +111,8 @@ mod index {
             my_led.set_value(1)?;
             my_led.set_value(0)?;
             Ok(())
-        }).or(Err(Failure(Status::InternalServerError)))?;
+        })/*.or(Err(Failure(Status::InternalServerError)))?;*/
+        .unwrap();
         Ok(Template::render("index", &()))
     }
 }
