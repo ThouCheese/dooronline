@@ -2,9 +2,6 @@ use argon2rs::verifier::Encoded;
 use jwt::{decode, encode, Header, Validation};
 use models::User;
 use schema::user;
-#[cfg(target_arch = "x86_64")]
-use rand::{OsRng, Rng};
-#[cfg(target_arch = "arm")]
 use rand::{OsRng, RngCore};
 use db::get_connection;
 use diesel::QueryDsl;

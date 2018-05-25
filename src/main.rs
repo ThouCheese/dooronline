@@ -138,18 +138,20 @@ mod login {
         let user: User = user::table
             .filter(user::username.eq(&form.get().username.to_lowercase()))
             .get_result(&db::get_connection())
-            .or_else(|_| {
-            		let mut context = HashMap::new();
-            		context.insert("message", "Wow wie is dat uberhaupt?");
-            		Err(Template::render("login", &context))
-            	})?;
+            .or({
+                let mut context = HashMap::new();
+                context.insert("message", "Wow wie is dat uberhaupt?");
+                Err(Template::render("login", &context))
+            })?;
         if user.validate_password(&form.get().password) {
-            cookies.add_private(Cookie::new("Authorization", user.create_jwt()
-            	.or_else(|_| {
-            		let mut context = HashMap::new();
-            		context.insert("message", "Geen logintoken voor jou haha");
-            		Err(Template::render("login", &context))	
-            	})?));
+            let mut cookie = Cookie::new("Authorization", user.create_jwt()
+                .or({
+                    let mut context = HashMap::new();
+                    context.insert("message", "Geen logintoken voor jou haha");
+                    Err(Template::render("login", &context))    
+                })?);
+            cookie.make_permanent();
+            cookies.add_private(cookie);
             Ok(Redirect::to("/"))
         } else {
             let mut context = HashMap::new();
@@ -196,7 +198,7 @@ mod admin {
             return Err(Failure(Status::Forbidden))
         }
         let user_vector: Vec<User> = user::table.get_results(&get_connection())
-        	.or(Err(Failure(Status::InternalServerError)))?;
+            .or(Err(Failure(Status::InternalServerError)))?;
         let mut context = HashMap::new();
         context.insert("users", user_vector);
         Ok(Template::render("admin", &context))
