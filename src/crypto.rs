@@ -9,7 +9,6 @@ use diesel::RunQueryDsl;
 
 // Hash a password with Argon2.
 pub fn hash_password(password: &str) -> Result<String, String> {
-
     let salt = generate_salt()?;
     let encoded_hash = Encoded::default2i(password.as_bytes(), &salt, &[], &[]).to_u8();
     Ok(String::from_utf8(encoded_hash)
@@ -19,7 +18,6 @@ pub fn hash_password(password: &str) -> Result<String, String> {
 
 // Verifies a password with Argon2.
 pub fn verify_password(encoded_hash: &str, plaintext_password: &str) -> Result<bool, String> {
-    println!("{}", hash_password(plaintext_password).unwrap());
     let encoded = Encoded::from_u8(encoded_hash.as_bytes())
         .or(Err("Could not read password"))?;
     Ok(encoded.verify(plaintext_password.as_bytes()))
@@ -65,13 +63,4 @@ pub fn validate_user_token(jwt: &str) -> Option<User> {
                 .get_result::<User>(&get_connection()).ok()
         )
         .unwrap_or(None)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {
-    }
 }

@@ -14,10 +14,14 @@ rand = "*"
 serde = "*"
 serde_derive = "*"
 
+[dependencies.chrono]
+version = "*"
+features = ["serde", ]
+
 [dependencies.diesel]
 version = "*"
 default-features = false
-features = ["postgres", ]
+features = ["postgres", "chrono", ]
 
 [dependencies.rocket_contrib]
 version = "*"

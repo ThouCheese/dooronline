@@ -4,23 +4,32 @@
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate sysfs_gpio;
-#[macro_use] extern crate diesel;
+#[macro_use] 
+extern crate diesel;
 extern crate dotenv;
 extern crate argon2rs;
 extern crate jsonwebtoken as jwt;
 extern crate rand;
 extern crate serde;
-#[macro_use] extern crate serde_derive;
+#[macro_use] 
+extern crate serde_derive;
+extern crate chrono;
 
 use rocket::{request::Form, 
              response::{Redirect, Failure, NamedFile, }, 
              http::{Cookie, Cookies, Status, }, };
 use rocket_contrib::Template;
-use models::User;
-use schema::user;
+use models::{User, NewLogEntry, LogEntry};
+use schema::{user, log};
 use db::get_connection;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::{/*thread::sleep, time::Duration, */
+          collections::HashMap,
+          path::{Path, PathBuf, }, };
+#[allow(unused_imports)] 
+use diesel::{RunQueryDsl, QueryDsl, ExpressionMethods};
+use sysfs_gpio::{Direction, Pin};
+use chrono::{Utc, NaiveDateTime};
+use crypto::hash_password;
 
 mod models;
 mod schema;
@@ -76,8 +85,6 @@ mod catchers {
 
 mod index {
     use super::*;
-    use sysfs_gpio::{Direction, Pin};
-    use std::{thread::sleep, time::Duration};
 
     #[get("/")]
     fn get(_user: User) -> Template {
@@ -85,12 +92,22 @@ mod index {
     }
 
     #[post("/")]
-    fn post(_user: User) -> Result<Template, Failure> {
+    fn post(user: User) -> Result<Template, Failure> {
+        // create log entry first, we log failed attempts as well
+        let new_log_entry = NewLogEntry {
+            user_id: user.id,
+            date: Utc::now().naive_local(),
+        };
+
+        diesel::insert_into(schema::log::table)
+            .values(&new_log_entry)
+            .execute(&get_connection())
+            .or(Err(Failure(Status::InternalServerError)))?;
+
         let my_led = Pin::new(27);
         my_led.with_exported(|| {
             my_led.set_direction(Direction::Out)?;
             my_led.set_value(1)?;
-            sleep(Duration::from_millis(1000));
             my_led.set_value(0)?;
             Ok(())
         }).or(Err(Failure(Status::InternalServerError)))?;
@@ -100,7 +117,6 @@ mod index {
 
 mod login {
     use super::*;
-    use diesel::{ExpressionMethods, RunQueryDsl, QueryDsl};
     
     #[derive(FromForm)]
     struct LoginData {
@@ -158,9 +174,6 @@ mod logout {
 
 mod admin {
     use super::*;
-    use diesel::{RunQueryDsl, QueryDsl};
-    use crypto::hash_password;
-    use schema::user;
     
     #[derive(FromForm, Insertable)]
     #[table_name = "user"]
@@ -177,54 +190,52 @@ mod admin {
 
     #[get("/admin")]
     fn get(user: User) -> Result<Template, Failure> {
-        if user.is_admin {
-            let user_vector: Vec<User> = user::table.get_results(&get_connection())
-            	.or(Err(Failure(Status::InternalServerError)))?;
-            let mut context = HashMap::new();
-            context.insert("users", user_vector);
-            Ok(Template::render("admin", &context))
-        } else {
-            Err(Failure(rocket::http::Status::Forbidden))
+        if !user.is_admin {
+            return Err(Failure(Status::Forbidden))
         }
+        let user_vector: Vec<User> = user::table.get_results(&get_connection())
+        	.or(Err(Failure(Status::InternalServerError)))?;
+        let mut context = HashMap::new();
+        context.insert("users", user_vector);
+        Ok(Template::render("admin", &context))
     }
 
     #[post("/admin/edituser", data = "<form>")]
     fn edit_user(user: User, form: Form<User>) -> Result<Redirect, Failure> {
-        use diesel::ExpressionMethods;
-
-        if user.is_admin {
-            let mut model = form.into_inner();
-            if user.id != 1 && model.id == 1 {
-                return Ok(Redirect::to("/thomas/admin"));
-            }
-            model.username = model.username.to_lowercase();
-            model.password = if model.password == "" {
-                user::table
-                    .find(model.id)
-                    .get_result::<User>(&get_connection())
-                    .or(Err(Failure(Status::InternalServerError)))?
-                    .password
-            } else {
-                hash_password(&model.password)
-                    .or(Err(Failure(Status::InternalServerError)))?
-            };
-
-            
-            diesel::update(user::table.find(model.id))
-                .set((user::username.eq(model.username),
-                      user::password.eq(model.password),
-                      user::is_admin.eq(model.is_admin), ))
-                .execute(&get_connection())
-                .or(Err(Failure(Status::InternalServerError)))?;
-            Ok(Redirect::to("/admin"))
-        } else {
-            Err(Failure(Status::Forbidden))
+        if !user.is_admin {
+            return Err(Failure(Status::Forbidden))
         }
+        let mut model = form.into_inner();
+        if user.id != 1 && model.id == 1 {
+            return Ok(Redirect::to("/thomas/admin"));
+        }
+        model.username = model.username.to_lowercase();
+        model.password = if model.password == "" {
+            user::table
+                .find(model.id)
+                .get_result::<User>(&get_connection())
+                .or(Err(Failure(Status::InternalServerError)))?
+                .password
+        } else {
+            hash_password(&model.password)
+                .or(Err(Failure(Status::InternalServerError)))?
+        };
+
+        
+        diesel::update(user::table.find(model.id))
+            .set((user::username.eq(model.username),
+                  user::password.eq(model.password),
+                  user::is_admin.eq(model.is_admin), ))
+            .execute(&get_connection())
+            .or(Err(Failure(Status::InternalServerError)))?;
+        Ok(Redirect::to("/admin"))
     }
     
     #[post("/admin/deleteuser", data = "<form>")]
     fn delete_user(user: User, form: Form<DeleteForm>) -> Result<Redirect, Failure> {
-        if user.is_admin {
+        if !user.is_admin {
+            return Err(Failure(Status::Forbidden))
+        }
             let user_id = form.into_inner().id;
             if user.id != 1 && user_id == 1 {
                 return Ok(Redirect::to("/thomas/delete"));
@@ -233,32 +244,58 @@ mod admin {
                 .execute(&get_connection())
                 .or(Err(Failure(Status::InternalServerError)))?;
             Ok(Redirect::to("/admin"))
-        } else {
-            Err(Failure(Status::Forbidden))
-        }
     }
 
     #[post("/admin/adduser", data = "<form>")]
     fn add_user(user: User, form: Form<NewData>) -> Result<Redirect, Failure> {
-        if user.is_admin {
-            let mut data = form.into_inner();
-            assert_ne!(data.password, "");
-            data.password = hash_password(&data.password)
-            	.or(Err(Failure(Status::InternalServerError)))?;
-            diesel::insert_into(user::table)
-                .values(&data)
-                .execute(&get_connection())
-                .or(Err(Failure(Status::InternalServerError)))?;
-            Ok(Redirect::to("/admin"))
-        } else {
-            Err(Failure(Status::Forbidden))
+        if !user.is_admin {
+            return Err(Failure(Status::Forbidden))
         }
+        let mut data = form.into_inner();
+        assert_ne!(data.password, "");
+        data.password = hash_password(&data.password)
+        	.or(Err(Failure(Status::InternalServerError)))?;
+        diesel::insert_into(user::table)
+            .values(&data)
+            .execute(&get_connection())
+            .or(Err(Failure(Status::InternalServerError)))?;
+        Ok(Redirect::to("/admin"))
     }
+
+    #[derive(Serialize)]
+    struct ContextObject {
+        id: i32,
+        user_id: i32,
+        date: NaiveDateTime,
+        username: String,
+    }
+
+    #[get("/log")]
+    fn log(_user: User) -> Result<Template, Failure> {
+        if !_user.is_admin {
+            return Err(Failure(Status::Forbidden))
+        }
+        let log_entries: Vec<(LogEntry, User)> = log::table
+            .inner_join(user::table)
+            .order(log::date.desc())
+            .load(&get_connection())
+            .or(Err(Failure(Status::InternalServerError)))?;
+        let context_objects: Vec<_> = log_entries
+            .into_iter()
+            .map(|(log_entry, user)| ContextObject {
+                id: log_entry.id,
+                user_id: log_entry.user_id,
+                date: log_entry.date,
+                username: user.username,
+            }).collect();
+        let mut context = HashMap::new();
+        context.insert("log", context_objects);
+        Ok(Template::render("log", &context))
+    } 
 }
 
 mod thomas {
-    use rocket_contrib::Template;
-    use std::collections::HashMap;
+    use super::*;
 
     #[get("/thomas/<message>")]
     fn get(message: String) -> Template {
@@ -280,7 +317,8 @@ fn main() {
                             login::get, login::post,
                             logout::get, logout::post, 
                             admin::get, admin::edit_user, 
-                            admin::add_user, admin::delete_user,
+                            admin::add_user, admin::delete_user, 
+                            admin::log, 
                             thomas::get, ])
         .catch(errors![catchers::bad_request, catchers::unauthorized, 
                        catchers::forbidden, catchers::not_found, 

@@ -1,9 +1,10 @@
 use crypto::{verify_password, create_auth_token, validate_user_token};
-use schema::user;
+use schema::{user, log};
 use rocket::{http::Status, Outcome};
 use rocket::request::{self, FromRequest, Request};
+use chrono::NaiveDateTime;
 
-#[derive(Debug, Queryable, Identifiable, Serialize, FromForm, Insertable, AsChangeset)]
+#[derive(Queryable, Identifiable, Serialize, FromForm)]
 #[table_name="user"]
 pub struct User {
     pub id: i32,
@@ -45,3 +46,17 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     }
 }
 
+#[derive(Queryable)] 
+// #[table_name="log"]
+pub struct LogEntry {
+    pub id: i32,
+    pub user_id: i32,
+    pub date: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name="log"]
+pub struct NewLogEntry {
+    pub user_id: i32,
+    pub date: NaiveDateTime,
+}

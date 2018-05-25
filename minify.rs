@@ -38,7 +38,6 @@ fn minify_html(source_file: &Path) -> std::io::Result<()> {
 }
 
 fn add_subdirs(path: PathBuf, result: &mut Vec<PathBuf>) {
-//    println!("Name: {}", path.display());
     let paths = fs::read_dir(path.to_str().expect("1")).expect("2");
     for dir_entry in paths {
         let sub_path = dir_entry.expect("2").path();
@@ -54,15 +53,14 @@ fn main() -> std::io::Result<()> {
     let mut result = Vec::<PathBuf>::new();
     add_subdirs(Path::new("./").to_path_buf(), &mut result);
     for path in result {
-        let extension = path.extension().map(|os_str|
-            os_str.to_str().unwrap());
-
-        if extension == Some("css") &&
-                !String::from(path.to_str().unwrap()).contains("min") {
+        if String::from(path.to_str().unwrap()).contains(".min.") {
+            continue
+        }
+        let extension = path.extension().map(|os_str| os_str.to_str().unwrap());
+        if extension == Some("css") {
             minify_css(&path)?;
         }
-        if extension == Some("hbs") &&
-                !String::from(path.to_str().unwrap()).contains("min") {
+        if extension == Some("hbs") {
             minify_html(&path)?;
         }
     }

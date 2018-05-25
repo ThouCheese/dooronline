@@ -67,9 +67,25 @@
     width: 10%;
 }
 
-/*hr {
-    display: none;
-}*/
+.log-entry {
+    width: 100%;
+}
+
+.log-entry-element {
+    width: 10%;
+    display: inline-block;
+    padding: 10px;
+}
+
+.date {
+    display: inline-block;
+    width: 40%;
+}
+
+.date-header {
+    display: inline-block;
+    width: 40%;
+}
 
 @media screen and (max-width: 650px) {
     .main {
@@ -95,7 +111,12 @@
         width: 100%
     }
 
-    /*hr {
-        display: inline;
-    }*/
+    .date {
+        width: 100%;
+        margin-bottom: 30px;
+    }
+
+    .date-header {
+        display: none;
+    }
 }
