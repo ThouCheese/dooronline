@@ -15,6 +15,14 @@ extern crate serde;
 extern crate serde_derive;
 extern crate chrono;
 
+mod models;
+mod schema;
+mod db;
+mod crypto;
+mod minify;
+#[macro_use]
+mod macros;
+
 use rocket::{request::Form, 
              response::{Redirect, Failure, NamedFile, }, 
              http::{Cookie, Cookies, Status, }, };
@@ -22,64 +30,52 @@ use rocket_contrib::Template;
 use models::{User, NewLogEntry, LogEntry};
 use schema::{user, log};
 use db::get_connection;
-use std::{/*thread::sleep, time::Duration, */
-          collections::HashMap,
-          path::{Path, PathBuf, }, };
+use std::path::{Path, PathBuf, };
 #[allow(unused_imports)] 
-use diesel::{RunQueryDsl, QueryDsl, ExpressionMethods};
-use sysfs_gpio::{Direction, Pin};
-use chrono::{Utc, NaiveDateTime};
+use diesel::{RunQueryDsl, QueryDsl, ExpressionMethods, };
+use sysfs_gpio::{Direction, Pin, };
+use chrono::{Utc, NaiveDateTime, };
 use crypto::hash_password;
-
-mod models;
-mod schema;
-mod db;
-mod crypto;
 
 #[get("/static/<file..>")]
 fn files(file: PathBuf) -> Option<NamedFile> {
-	if file.to_str().or(None)?.contains("..") {
-		panic!("Attempt to access root directory")
-	}
+    if file.to_str().or(None)?.contains("..") {
+        panic!("Attempt to access root directory")
+    }
     NamedFile::open(Path::new("static/").join(file)).ok()
 }
 
 mod catchers {
-    use rocket_contrib::Template;  
-    use std::collections::HashMap;  
+    use rocket_contrib::Template;
     
     #[error(400)]
     fn bad_request() -> Template {
-        let mut context = HashMap::new();
-        context.insert("422", false);
-        Template::render("400", &context)
+        Template::render("400.min", &hashmap!["422" => false])
     }
     
     #[error(401)]
     fn unauthorized() -> Template {
-        Template::render("401", &())
+        Template::render("401.min", &())
     }
     
     #[error(403)]
     fn forbidden() -> Template {
-        Template::render("403", &())
+        Template::render("403.min", &())
     }
     
     #[error(404)]
     fn not_found() -> Template {
-        Template::render("404", &())
+        Template::render("404.min", &())
     }
     
     #[error(422)]
     fn unprocessable() -> Template {
-        let mut context = HashMap::new();
-        context.insert("422", true);
-        Template::render("400", &context)
+        Template::render("400.min", &hashmap!["422" => true])
     }
     
     #[error(500)]
     fn internal() -> Template {
-        Template::render("500", &())
+        Template::render("500.min", &())
     }
 }
 
@@ -87,8 +83,8 @@ mod index {
     use super::*;
 
     #[get("/")]
-    fn get(_user: User) -> Template {
-        Template::render("index", &())
+    fn get(user: User) -> Template {
+        Template::render("index.min", &hashmap!["admin" => user.is_admin])
     }
 
     #[post("/")]
@@ -102,8 +98,7 @@ mod index {
         diesel::insert_into(schema::log::table)
             .values(&new_log_entry)
             .execute(&get_connection())
-            // .or(Err(Failure(Status::InternalServerError)))?;
-            .unwrap();
+            .or(Err(Failure(Status::InternalServerError)))?;
 
         let my_led = Pin::new(27);
         my_led.with_exported(|| {
@@ -111,9 +106,8 @@ mod index {
             my_led.set_value(1)?;
             my_led.set_value(0)?;
             Ok(())
-        })/*.or(Err(Failure(Status::InternalServerError)))?;*/
-        .unwrap();
-        Ok(Template::render("index", &()))
+        }).or(Err(Failure(Status::InternalServerError)))?;
+        Ok(Template::render("index.min", &()))
     }
 }
 
@@ -128,9 +122,7 @@ mod login {
 
     #[get("/login")]
     fn get() -> Template {
-        let mut context = HashMap::new();
-        context.insert("failed-attempt", false);
-        Template::render("login", &context)
+        Template::render("login.min", &hashmap!["failed-attempt" => false])
     }
 
     #[post("/login", data="<form>")]
@@ -138,25 +130,24 @@ mod login {
         let user: User = user::table
             .filter(user::username.eq(&form.get().username.to_lowercase()))
             .get_result(&db::get_connection())
-            .or({
-                let mut context = HashMap::new();
-                context.insert("message", "Wow wie is dat uberhaupt?");
-                Err(Template::render("login", &context))
-            })?;
+            .or(Err(Template::render(
+                "login.min", 
+                &hashmap!["message" => "Wow wie is dat uberhaupt?"]
+            )))?;
         if user.validate_password(&form.get().password) {
             let mut cookie = Cookie::new("Authorization", user.create_jwt()
-                .or({
-                    let mut context = HashMap::new();
-                    context.insert("message", "Geen logintoken voor jou haha");
-                    Err(Template::render("login", &context))    
-                })?);
+                .or(Err(Template::render(
+                    "login.min", 
+                    &hashmap!["message" => "Geen logintoken voor jou haha"])
+                ))?);
             cookie.make_permanent();
             cookies.add_private(cookie);
             Ok(Redirect::to("/"))
         } else {
-            let mut context = HashMap::new();
-            context.insert("message", "Je wachtwoord is kut en fout");
-            Err(Template::render("login", &context))
+            Err(Template::render(
+                "login.min", 
+                &hashmap!["message" => "Je wachtwoord is kut en fout"]
+            ))
         }
     }
 }
@@ -166,7 +157,7 @@ mod logout {
     
     #[get("/logout")]
     fn get() -> Template {
-        Template::render("logout", &()) 
+        Template::render("logout.min", &()) 
     }
 
     #[post("/logout")]
@@ -199,9 +190,7 @@ mod admin {
         }
         let user_vector: Vec<User> = user::table.get_results(&get_connection())
             .or(Err(Failure(Status::InternalServerError)))?;
-        let mut context = HashMap::new();
-        context.insert("users", user_vector);
-        Ok(Template::render("admin", &context))
+        Ok(Template::render("admin.min", &hashmap!["users" => user_vector]))
     }
 
     #[post("/admin/edituser", data = "<form>")]
@@ -292,9 +281,7 @@ mod admin {
                 date: log_entry.date,
                 username: user.username,
             }).collect();
-        let mut context = HashMap::new();
-        context.insert("log", context_objects);
-        Ok(Template::render("log", &context))
+        Ok(Template::render("log.min", &hashmap!["log" => context_objects]))
     } 
 }
 
@@ -303,17 +290,17 @@ mod thomas {
 
     #[get("/thomas/<message>")]
     fn get(message: String) -> Template {
-        let mut context = HashMap::new();
-        context.insert("message", match message.as_str() {
+        let message = match message.as_str() {
             "delete" => "mijn account moet verwijderen thomas!",
             "admin" => "mijn adminrechten mag verwijderen thomas!",
             _ => "wat voor shit je ook aan het doen bent doen",
-        });
-        Template::render("nee_thomas", &context)
+        };
+        Template::render("nee_thomas.min", &hashmap!["message" => message])
     }
 }
  
-fn main() {
+fn main()  {
+    minify::minify().unwrap();
     rocket::ignite()
         .attach(Template::fairing())
         .mount("/", routes![files,
