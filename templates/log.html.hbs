@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.min.css">
+    <link rel="stylesheet" href="/static/admin-style.css">
+</head>
+<body>
+<div class="header">
+    <a class="header-left" href="/">
+        <h1>Headur</h1>
+    </a>
+    <div style="float: right; padding-top: 30px;">
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+<hr>
+<div class="main">
+    <h2>Log entries</h2>
+    <div class="log-entry">
+        <p class="log-entry-element"><i>ID</i></p>
+        <p class="log-entry-element"><i>User</i></p>
+        <p class="date-header"><i>Date</i></p>
+    </div>
+    {{#each log}}
+    <div class="log-entry">
+        <p class="log-entry-element">{{this.id}}</p>
+        <p class="log-entry-element">{{this.username}}</p>
+        <p class="date">{{this.date}}</p>
+    </div>
+    <hr>
+    {{/each}}    
+</div>
+</body>
+</html>
