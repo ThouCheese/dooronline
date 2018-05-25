@@ -5,3 +5,6 @@ Rocket.toml
 minify
 home_site.iml
 .idea
+templates/*.min.html.hbs
+Cargo.lock
+
