@@ -107,7 +107,7 @@ mod index {
             my_led.set_value(0)?;
             Ok(())
         }).or(Err(Failure(Status::InternalServerError)))?;
-        Ok(Template::render("index.min", &()))
+        Ok(Template::render("index.min", &hashmap!["admin" => user.is_admin])
     }
 }
 
@@ -214,7 +214,6 @@ mod admin {
                 .or(Err(Failure(Status::InternalServerError)))?
         };
 
-        
         diesel::update(user::table.find(model.id))
             .set((user::username.eq(model.username),
                   user::password.eq(model.password),
@@ -229,14 +228,14 @@ mod admin {
         if !user.is_admin {
             return Err(Failure(Status::Forbidden))
         }
-            let user_id = form.into_inner().id;
-            if user.id != 1 && user_id == 1 {
-                return Ok(Redirect::to("/thomas/delete"));
-            }
-            diesel::delete(user::table.find(user_id))
-                .execute(&get_connection())
-                .or(Err(Failure(Status::InternalServerError)))?;
-            Ok(Redirect::to("/admin"))
+        let user_id = form.into_inner().id;
+        if user.id != 1 && user_id == 1 {
+            return Ok(Redirect::to("/thomas/delete"));
+        }
+        diesel::delete(user::table.find(user_id))
+            .execute(&get_connection())
+            .or(Err(Failure(Status::InternalServerError)))?;
+        Ok(Redirect::to("/admin"))
     }
 
     #[post("/admin/adduser", data = "<form>")]
