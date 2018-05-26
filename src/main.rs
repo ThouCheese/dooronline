@@ -107,7 +107,7 @@ mod index {
             my_led.set_value(0)?;
             Ok(())
         }).or(Err(Failure(Status::InternalServerError)))?;
-        Ok(Template::render("index.min", &hashmap!["admin" => user.is_admin])
+        Ok(Template::render("index.min", &hashmap!["admin" => user.is_admin]))
     }
 }
 
