@@ -30,12 +30,15 @@ use rocket_contrib::Template;
 use models::{User, NewLogEntry, LogEntry};
 use schema::{user, log};
 use db::get_connection;
-use std::path::{Path, PathBuf, };
+use std::{path::{Path, PathBuf, },
+          thread, time, };
 #[allow(unused_imports)] 
 use diesel::{RunQueryDsl, QueryDsl, ExpressionMethods, };
 use sysfs_gpio::{Direction, Pin, };
 use chrono::{Utc, NaiveDateTime, };
 use crypto::hash_password;
+
+static SLEEP_TIME: time::Duration = time::Duration::from_millis(75);
 
 #[get("/static/<file..>")]
 fn files(file: PathBuf) -> Option<NamedFile> {
@@ -104,6 +107,7 @@ mod index {
         my_led.with_exported(|| {
             my_led.set_direction(Direction::Out)?;
             my_led.set_value(1)?;
+            thread::sleep(SLEEP_TIME);
             my_led.set_value(0)?;
             Ok(())
         }).or(Err(Failure(Status::InternalServerError)))?;
@@ -315,4 +319,3 @@ fn main()  {
                        catchers::unprocessable, catchers::internal, ])
         .launch();
 }
-
