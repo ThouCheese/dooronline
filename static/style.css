@@ -15,9 +15,17 @@ body {
 }
 
 .login-form input {
-    padding: 5px;
-    margin: 0;
+    width: 390px;
+    margin: 5px;
+    margin-bottom: 10px;
+    padding: 10px;
     border: 1px black;
+    background: #EEE;
+    color: #000;
+}
+
+.login-form input:hover[type=submit] {
+    background: #DDD;
 }
 
 .door-form input {
@@ -26,10 +34,12 @@ body {
     border-radius: 100px;
     height: 200px;
     border: 0;
+    background: #EEE;
+    color: #999;
 }
 
 .door-form input:hover {
-    background: #efefef;
+    background: #DDD;
 }
 
 .header {

@@ -86,8 +86,8 @@ mod index {
     use super::*;
 
     #[get("/")]
-    fn get(user: User) -> Template {
-        Template::render("index.min", &hashmap!["admin" => user.is_admin])
+    fn get(/*user: User*/) -> Template {
+        Template::render("index.min", &hashmap!["admin" => /*user.is_admin*/true])
     }
 
     #[post("/")]
