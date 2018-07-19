@@ -46,6 +46,62 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     }
 }
 
+#[derive(Queryable, Identifiable, Serialize, FromForm)]
+#[table_name="user"]
+pub struct Admin {
+    pub id: i32,
+    pub username: String,
+    pub password: String,
+    pub is_admin: bool,
+}
+
+impl Admin {
+    pub fn validate_password(&self, password: &str) -> bool {
+        match verify_password(&self.password, password) {
+            Ok(is_valid) => is_valid,
+            Err(_err) => {
+                println!("de error is {:?}", _err);
+                false
+            },
+        }
+    }
+    
+    pub fn create_jwt(&self) -> Result<String, String> {
+        create_auth_token(&User {
+            id: self.id,
+            username: self.username.clone(),
+            password: self.password.clone(),
+            is_admin: true,
+        })
+    }
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for Admin {
+    type Error = String;
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Admin, String> {
+        request
+            .cookies()
+            .get_private("Authorization")
+            .map(|cookie| String::from(cookie.value()))
+            .map(|jwt| if let Some(user) = validate_user_token(&jwt) {
+                if user.is_admin {
+                    Outcome::Success(Admin {
+                        id: user.id,
+                        username: user.username,
+                        password: user.password,
+                        is_admin: true,
+                    })
+                } else {
+                    Outcome::Failure((Status::Unauthorized, String::from("not admin")))
+                }
+            } else {
+                Outcome::Failure((Status::Unauthorized, String::from("invalid JWT")))
+            })
+            .unwrap_or(Outcome::Failure((Status::Unauthorized, String::from("invalid JWT"))))
+    }
+}
+
 #[derive(Queryable)] 
 // #[table_name="log"]
 pub struct LogEntry {

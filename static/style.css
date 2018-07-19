@@ -4,6 +4,12 @@ body {
     margin: 5%;
 }
 
+input {
+    background: #EEE;
+    border: 0px;
+    
+}
+
 .main {
     max-width: 400px;
     margin-left: auto;
