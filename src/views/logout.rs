@@ -18,6 +18,9 @@ fn get() -> Markup {
                 a class="header-left" href="/" {
                     h1 { "Headeur" }
                 }
+                div class="header-right" {    
+                    a href="/admin" { "Admin" }
+                }
             }
             hr;
             div class="main" {

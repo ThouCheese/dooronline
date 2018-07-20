@@ -8,7 +8,6 @@ use chrono::{Utc};
 use models::{NewLogEntry, User, };
 use sysfs_gpio::{Direction, Pin, };
 
-
 static SLEEP_TIME: time::Duration = time::Duration::from_millis(75);
 
 #[get("/")]
@@ -26,10 +25,10 @@ fn get(user: User) -> Markup {
                 a class="header-left" href="/" {
                     h1 { "Headeur" }
                 }
-                div style="float: right; padding-top: 30px;" {
+                div class="header-right" {
                     a href="/logout" { "Logout" }
                     @if user.is_admin {
-                        a style="margin-left: 10px;" href="/admin" { "Admin" }
+                        a href="/admin" { "Admin" }
                     }
                 }
             }
@@ -78,10 +77,10 @@ fn post(user: User) -> Result<Markup, Failure> {
                 a class="header-left" href="/" {
                     h1 { "Headeur" }
                 }
-                div style="float: right; padding-top: 30px;" {
+                div class="header-right" {
                     a href="/logout" { "Logout" }
                     @if user.is_admin {
-                        a style="margin-left: 10px;" href="/admin" { "Admin" }
+                        a href="/admin" { "Admin" }
                     }
                 }
             }

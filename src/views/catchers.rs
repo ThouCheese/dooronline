@@ -17,7 +17,7 @@ fn bad_request() -> Markup {
                 }
             }
             div class="main" {
-                h1 { "401 Bad Request, stop fucking with the forms!" }
+                h1 { "400 Bad Request, stop fucking with the forms!" }
                 p { 
                     "Ik weet dat jij dit bent Thomas, en hier is mijn" 
                     a href="/ik-ben-een-flapdrol-die-met-forms-fuckt" {
@@ -44,10 +44,11 @@ fn unauthorized() -> Markup {
                 a class="header-left" href="/" {
                     h1 { "Headeur" }
                 }
-                div style="float: right; padding-top: 30px;" {
+                div class="header-right" {
                     a href="/login" { "Log In" }
                 }
             }
+            hr;
             div class="main" {
                 h1 { "401 Unauthorized" }
                 h2 { "You fucked with the wrong site!" }
@@ -91,12 +92,12 @@ fn forbidden() -> Markup {
                 a class="header-left" href="/" {
                     h1 { "Headeur" }
                 }
-                div style="float: right; padding-top: 30px;" {
+                div class="header-right" {
                     a href="/logout" { "Logout" }
                 }
             }
             div class="main" {
-                h1 { "Forbidden" }
+                h1 { "403 Forbidden" }
                 p { "
 Admin rechten verkrijgen.... <FAILURE> klaarblijkelijk mag je niks HAHAHA zoek zelf een site
 "
@@ -150,7 +151,7 @@ fn unprocessable() -> Markup {
         (DOCTYPE)
         head {
             meta charset="UTF-8";
-            title { "400" }
+            title { "422" }
             meta name="viewport" content="width=device-width, initial-scale=1.0";
             link rel="stylesheet" href="/static/style.min.css";
         }
@@ -161,7 +162,7 @@ fn unprocessable() -> Markup {
                 }
             }
             div class="main" {
-                h1 { "401 Bad Request, stop fucking with the forms!" }
+                h1 { "400 Bad Request, stop fucking with the forms!" }
                 p { 
                     "Ik weet dat jij dit bent Thomas, en hier is mijn" 
                     a href="/ik-ben-een-flapdrol-die-met-forms-fuckt" {

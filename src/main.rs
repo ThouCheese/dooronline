@@ -25,15 +25,27 @@ mod macros;
 mod views;
 
 use views::*;
-use rocket::response::NamedFile;
+use rocket::{response::{self, NamedFile, Response, Responder, }, request::Request, };
 use std::{path::{Path, PathBuf, }, };
 
-#[get("/static/<file..>")]
-fn files(file: PathBuf) -> Option<NamedFile> {
-    if file.to_str().or(None)?.contains("..") {
-        panic!("Attempt to access root directory")
+// wrapper for a named file, but with Cache-Control header
+struct CachedFile(NamedFile);
+
+impl<'r> Responder<'r> for CachedFile {
+    fn respond_to(self, request: &Request) -> response::Result<'r> {
+        Response::build_from(self.0.respond_to(request)?)
+            //cache for one month
+            .raw_header("Cache-Control", "max-age=2628000")
+            .ok()
     }
-    NamedFile::open(Path::new("static/").join(file)).ok()
+}
+
+#[get("/static/<file..>")]
+fn files(file: PathBuf) -> Option<CachedFile> {
+    NamedFile::open(Path::new("static/")
+        .join(file))
+        .ok()
+        .map(|named_file| CachedFile(named_file))
 }
  
 fn main()  {

@@ -21,7 +21,7 @@ fn get(message: String) -> Markup {
                 a class="header-left" href="/" {
                     h1 { "Headeur" }
                 }
-                div style="float: right; padding-top: 30px;" {
+                div class="header-right" {
                     a href="/login" { "Login" }
                     a href="/logout" { "Logout" }
                 }
