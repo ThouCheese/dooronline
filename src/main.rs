@@ -1,4 +1,4 @@
-#![feature(plugin, custom_derive, proc_macro_non_items, use_extern_macros)]
+#![feature(plugin, custom_derive, proc_macro_non_items)]
 #![plugin(rocket_codegen)]
 #![allow(proc_macro_derive_resolution_fallback)]
 
