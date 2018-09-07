@@ -180,4 +180,4 @@ fn log(_user: Admin) -> Result<Markup, Failure> {
             }
         }
     })
-} 
+}

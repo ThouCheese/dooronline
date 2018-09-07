@@ -29,7 +29,7 @@ fn get() -> Markup {
                     "
 Ga je weg? Waarom? Waarheen? Is er een andere site? Dacht ik het niet! Het is zeker die sloerie
 van een 216.18.168.16:80 of niet? Ik zag je wel rondhangen met haar! \"Ik moet weer laat 
-werken\" elke fucking keer weer! En ik blijf met maar geloven, en waarom? Wat krijg ik er voor 
+werken\" elke fucking keer weer! En ik blijf het maar geloven, en waarom? Wat krijg ik er voor 
 terug? Niks! Ik kan hier een beetje alleen achter blijven met de kinderen terwijl jij alle 
 poorten van 216.18.168.16 zit te gebruiken!"
                 }
