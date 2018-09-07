@@ -58,9 +58,8 @@ pub struct LoginTokenClaims {
 pub fn validate_user_token(jwt: &str) -> Option<User> {
     parse_token(jwt)
         .ok()
-        .map(
-            |claims| user::table.find(claims.id)
-                .get_result::<User>(&get_connection()).ok()
-        )
+        .map(|claims| 
+            user::table.find(claims.id)
+                .get_result::<User>(&get_connection()).ok())
         .unwrap_or(None)
 }

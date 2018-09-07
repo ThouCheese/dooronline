@@ -1,5 +1,5 @@
 [package]
-name = "home_site"
+name = "dooronline"
 version = "0.1.0"
 authors = ["luuk <luuk.wester@gmail.com>"]
 
@@ -13,6 +13,7 @@ argon2rs = "*"
 rand = "*"
 serde = "*"
 serde_derive = "*"
+serde_json = "*"
 
 [dependencies.chrono]
 version = "*"
@@ -25,6 +26,7 @@ features = ["postgres", "chrono", ]
 
 [dependencies.rocket_contrib]
 version = "*"
+features = ["json"]
 default-features = false
 
 [dependencies.maud]

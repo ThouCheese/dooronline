@@ -1,17 +1,20 @@
-#![feature(plugin, custom_derive, proc_macro_non_items, use_extern_macros)]
+#![feature(plugin, custom_derive, proc_macro_non_items)]
 #![plugin(rocket_codegen)]
 #![allow(proc_macro_derive_resolution_fallback)]
 
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate sysfs_gpio;
-#[macro_use] extern crate diesel;
+#[macro_use] 
+extern crate diesel;
 extern crate dotenv;
 extern crate argon2rs;
 extern crate jsonwebtoken as jwt;
 extern crate rand;
 extern crate serde;
-#[macro_use] extern crate serde_derive;
+#[macro_use] 
+extern crate serde_derive;
+extern crate serde_json;
 extern crate chrono;
 extern crate maud;
 
@@ -20,7 +23,7 @@ mod schema;
 mod db;
 mod crypto;
 mod minify;
-#[macro_use]
+#[macro_use] 
 mod macros;
 mod views;
 
@@ -59,6 +62,7 @@ fn main()  {
                             admin::add_user, admin::delete_user, 
                             admin::log, 
                             thomas::get, ])
+        .mount("/api/", routes![api::login, api::open])
         .catch(catchers![catchers::bad_request, catchers::unauthorized, 
                          catchers::forbidden, catchers::not_found, 
                          catchers::unprocessable, catchers::internal, ])

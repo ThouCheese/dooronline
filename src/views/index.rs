@@ -26,10 +26,10 @@ fn get(user: User) -> Markup {
                     h1 { "Headeur" }
                 }
                 div class="header-right" {
-                    a href="/logout" { "Logout" }
                     @if user.is_admin {
                         a href="/admin" { "Admin" }
                     }
+                    a href="/logout" { "Logout" }
                 }
             }
             hr;
@@ -42,9 +42,7 @@ fn get(user: User) -> Markup {
     }
 }
 
-#[post("/")]
-fn post(user: User) -> Result<Markup, Failure> {
-    // create log entry first, we log failed attempts as well
+pub fn open_door(user: &User) -> Result<(), Failure> {
     let new_log_entry = NewLogEntry {
         user_id: user.id,
         date: Utc::now().naive_local(),
@@ -63,6 +61,13 @@ fn post(user: User) -> Result<Markup, Failure> {
         my_led.set_value(0)?;
         Ok(())
     }).or(Err(Failure(Status::InternalServerError)))?;
+    Ok(())
+}
+
+#[post("/")]
+fn post(user: User) -> Result<Markup, Failure> {
+    // create log entry first, we log failed attempts as well
+    open_door(&user)?;
     
     Ok(html! {
         (DOCTYPE)
@@ -78,10 +83,10 @@ fn post(user: User) -> Result<Markup, Failure> {
                     h1 { "Headeur" }
                 }
                 div class="header-right" {
-                    a href="/logout" { "Logout" }
                     @if user.is_admin {
                         a href="/admin" { "Admin" }
                     }
+                    a href="/logout" { "Logout" }
                 }
             }
             hr;
