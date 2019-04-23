@@ -17,7 +17,4 @@ table! {
 
 joinable!(log -> user (user_id));
 
-allow_tables_to_appear_in_same_query!(
-    log,
-    user,
-);
+allow_tables_to_appear_in_same_query!(log, user,);

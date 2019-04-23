@@ -1,18 +1,20 @@
+use crate::db;
+use crate::models::user::User;
 use maud::{html, Markup, DOCTYPE};
-use models::User;
-use rocket::{response::Redirect, request::Form, http::{Cookies, Cookie}, };
-use schema::user;
-use db::get_connection;
-use diesel::{QueryDsl, RunQueryDsl, ExpressionMethods};
+use rocket::{
+    http::{Cookie, Cookies},
+    request::Form,
+    response::Redirect,
+};
 
 #[derive(FromForm)]
-struct LoginData {
+pub struct LoginData {
     username: String,
     password: String,
 }
 
 #[get("/login")]
-fn get() -> Markup {
+pub fn get() -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -39,20 +41,26 @@ fn get() -> Markup {
     }
 }
 
-#[post("/login", data="<form>")]
-fn post(form: Form<LoginData>, mut cookies: Cookies) -> Result<Redirect, Markup> {
-    let form = form.get();
-    user::table
-        .filter(user::username.eq(&form.username.to_lowercase()))
-        .get_result(&get_connection())
-        .map_err(|_| ("Wow wie is dat uberhaupt?", 
-                      form.username.as_str(), 
-                      form.password.as_str()))
+#[post("/login", data = "<form>")]
+pub fn post(
+    form: Form<LoginData>,
+    mut cookies: Cookies,
+    conn: db::DeurDB,
+) -> Result<Redirect, Markup> {
+    let form = form.into_inner();
+    User::by_username(&form.username, &conn)
+        .ok_or_else(|| {
+            (
+                "Wow wie is dat uberhaupt?",
+                form.username.as_str(),
+                form.password.as_str(),
+            )
+        })
         .and_then(|user: User| {
             if user.validate_password(&form.password) {
                 user.create_jwt()
                     .map_err(|_| ("Geen logintoken voor jou haha", "", ""))
-                    .map(|jwt| Cookie::new("Authorization", jwt))                        
+                    .map(|jwt| Cookie::new("Authorization", jwt))
             } else {
                 Err(("Je wachtwoord is kut en fout", form.username.as_str(), ""))
             }
@@ -83,9 +91,9 @@ fn post(form: Form<LoginData>, mut cookies: Cookies) -> Result<Redirect, Markup>
                     }
                     div class="main" {
                         form action="/login" method="post" class="login-form" {
-                            input name="username" placeholder="username" type="text" 
+                            input name="username" placeholder="username" type="text"
                                   value=(username);
-                            input name="password" placeholder="password" type="password" 
+                            input name="password" placeholder="password" type="password"
                                   value=(password);
                             input style="width: 410px;" type="submit" value="login";
                         }

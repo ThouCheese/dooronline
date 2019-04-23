@@ -1,30 +1,24 @@
+use crate::crypto::hash_password;
+use crate::db;
+use crate::models::{admin::Admin, log_entry::LogEntry, user::User};
 use maud::{html, Markup, DOCTYPE};
-use rocket::{response::{Failure, Redirect, }, request::Form, http::Status };
-use db::get_connection;
-use diesel::{RunQueryDsl, insert_into, update, delete};
-use models::{User, Admin, LogEntry, };
-use crypto::hash_password;
-use schema::{user, log};
-use diesel::{QueryDsl, ExpressionMethods, };
+use rocket::{http::Status, request::Form, response::Redirect};
 
-#[derive(FromForm, Insertable)]
-#[table_name = "user"]
-struct NewData {
+#[derive(FromForm)]
+pub struct NewData {
     pub username: String,
     pub password: String,
     pub is_admin: bool,
 }
 
 #[derive(FromForm)]
-struct DeleteForm {
+pub struct DeleteForm {
     pub id: i32,
 }
 
 #[get("/admin")]
-fn get(_user: Admin) -> Result<Markup, Failure> {
-    let user_vector: Vec<User> = user::table.get_results(&get_connection())
-        .or(Err(Failure(Status::InternalServerError)))?;
-    Ok(html! {
+pub fn get(_user: Admin, conn: db::DeurDB) -> Markup {
+    html! {
         (DOCTYPE)
         head {
             meta charset="UTF-8";
@@ -50,21 +44,21 @@ fn get(_user: Admin) -> Result<Markup, Failure> {
                     form action="/admin/adduser" method="post" {
                         input name="username" placeholder="username";
                         input name="password" placeholder="password";
-                        "Admin?" 
+                        "Admin?"
                         input name="is_admin" type="checkbox";
                         input type="submit" value="create";
                     }
                 }
-                
+
                 h2 { "User list" }
-                @for user in user_vector {
+                @for user in User::all(&conn) {
                     div class="user-list" {
                         form action="/admin/edituser" method="post" class="update-form" {
-                            p { (user.id) } 
+                            p { (user.id) }
                             input type="hidden" name="id" value=(user.id);
-                            input type="text" name="username" value=(user.username) 
+                            input type="text" name="username" value=(user.username)
                                   class="username";
-                            input type="text" name="password" placeholder="password" 
+                            input type="text" name="password" placeholder="password"
                                   autocomplete="off";
                             p { "admin?" }
                             input type="checkbox" name="is_admin" checked?[user.is_admin];
@@ -79,68 +73,54 @@ fn get(_user: Admin) -> Result<Markup, Failure> {
                 }
             }
         }
-    })
+    }
 }
 
 #[post("/admin/edituser", data = "<form>")]
-fn edit_user(user: Admin, form: Form<User>) -> Result<Redirect, Failure> {
-    let mut model = form.into_inner();
-    if user.id != 1 && model.id == 1 {
+pub fn edit_user(user: Admin, form: Form<User>, conn: db::DeurDB) -> Result<Redirect, Status> {
+    let form = form.into_inner();
+    if user.id != 1 && form.id == 1 {
         return Ok(Redirect::to("/thomas/admin"));
     }
-    model.username = model.username.to_lowercase();
-    model.password = if model.password == "" {
-        user::table
-            .find(model.id)
-            .get_result::<User>(&get_connection())
-            .or(Err(Failure(Status::InternalServerError)))?
-            .password
+    let mut updatee = User::by_id(form.id, &conn).ok_or_else(|| Status::InternalServerError)?;
+    updatee.username = form.username.to_lowercase();
+    updatee.password = if form.password == "" {
+        updatee.password
     } else {
-        hash_password(&model.password)
-            .or(Err(Failure(Status::InternalServerError)))?
+        hash_password(&form.password)
     };
+    updatee.update(&conn).ok_or(Status::InternalServerError)?;
 
-    update(user::table.find(model.id))
-        .set((user::username.eq(model.username),
-              user::password.eq(model.password),
-              user::is_admin.eq(model.is_admin), ))
-        .execute(&get_connection())
-        .or(Err(Failure(Status::InternalServerError)))?;
     Ok(Redirect::to("/admin"))
 }
 
 #[post("/admin/deleteuser", data = "<form>")]
-fn delete_user(user: Admin, form: Form<DeleteForm>) -> Result<Redirect, Failure> {
+pub fn delete_user(
+    user: Admin,
+    form: Form<DeleteForm>,
+    conn: db::DeurDB,
+) -> Result<Redirect, Status> {
     let user_id = form.into_inner().id;
     if user.id != 1 && user_id == 1 {
         return Ok(Redirect::to("/thomas/delete"));
     }
-    delete(user::table.find(user_id))
-        .execute(&get_connection())
-        .or(Err(Failure(Status::InternalServerError)))?;
+    let user = User::by_id(user_id, &conn).unwrap();
+    user.delete(&conn).ok_or(Status::InternalServerError)?;
     Ok(Redirect::to("/admin"))
 }
 
 #[post("/admin/adduser", data = "<form>")]
-fn add_user(_user: Admin, form: Form<NewData>) -> Result<Redirect, Failure> {
-    let mut data = form.into_inner();
-    assert_ne!(data.password, "");
-    data.password = hash_password(&data.password)
-        .or(Err(Failure(Status::InternalServerError)))?;
-    insert_into(user::table)
-        .values(&data)
-        .execute(&get_connection())
-        .or(Err(Failure(Status::InternalServerError)))?;
+pub fn add_user(_user: Admin, form: Form<NewData>, conn: db::DeurDB) -> Result<Redirect, Status> {
+    let form = form.into_inner();
+    assert_ne!(form.password, "");
+    User::create(&form.username, &form.password, form.is_admin, &conn)
+        .ok_or(Status::InternalServerError)?;
     Ok(Redirect::to("/admin"))
 }
 
 #[get("/log")]
-fn log(_user: Admin) -> Result<Markup, Failure> {
-    let log_entries: Vec<(LogEntry, User)> = log::table
-        .inner_join(user::table)
-        .order(log::date.desc())
-        .load(&get_connection())
-        .or(Err(Failure(Status::InternalServerError)))?;
+pub fn log(_user: Admin, conn: db::DeurDB) -> Result<Markup, Status> {
+    let log_entries = LogEntry::all_with_user(&conn);
     Ok(html! {
         (DOCTYPE)
         head {

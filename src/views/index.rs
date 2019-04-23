@@ -1,17 +1,14 @@
+use crate::db;
+use crate::models::{log_entry::LogEntry, user::User};
 use maud::{html, Markup, DOCTYPE};
-use rocket::{response::Failure, http::Status, };
-use db::get_connection;
-use diesel::{RunQueryDsl, insert_into};
-use schema::log;
+use rocket::http::Status;
 use std::{thread, time};
-use chrono::{Utc};
-use models::{NewLogEntry, User, };
-use sysfs_gpio::{Direction, Pin, };
+use sysfs_gpio::{Direction, Pin};
 
 static SLEEP_TIME: time::Duration = time::Duration::from_millis(75);
 
 #[get("/")]
-fn get(user: User) -> Markup {
+pub fn get(user: User) -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -42,33 +39,27 @@ fn get(user: User) -> Markup {
     }
 }
 
-pub fn open_door(user: &User) -> Result<(), Failure> {
-    let new_log_entry = NewLogEntry {
-        user_id: user.id,
-        date: Utc::now().naive_local(),
-    };
-
-    insert_into(log::table)
-        .values(&new_log_entry)
-        .execute(&get_connection())
-        .or(Err(Failure(Status::InternalServerError)))?;
+pub fn open_door(user: &User, conn: db::DeurDB) -> Result<(), Status> {
+    LogEntry::create(user.id, &conn).ok_or(Status::InternalServerError)?;
 
     let my_led = Pin::new(27);
-    my_led.with_exported(|| {
-        my_led.set_direction(Direction::Out)?;
-        my_led.set_value(1)?;
-        thread::sleep(SLEEP_TIME);
-        my_led.set_value(0)?;
-        Ok(())
-    }).or(Err(Failure(Status::InternalServerError)))?;
+    my_led
+        .with_exported(|| {
+            my_led.set_direction(Direction::Out)?;
+            my_led.set_value(1)?;
+            thread::sleep(SLEEP_TIME);
+            my_led.set_value(0)?;
+            Ok(())
+        })
+        .or(Err(Status::InternalServerError))?;
     Ok(())
 }
 
 #[post("/")]
-fn post(user: User) -> Result<Markup, Failure> {
+pub fn post(user: User, conn: db::DeurDB) -> Result<Markup, Status> {
     // create log entry first, we log failed attempts as well
-    open_door(&user)?;
-    
+    open_door(&user, conn)?;
+
     Ok(html! {
         (DOCTYPE)
         head {

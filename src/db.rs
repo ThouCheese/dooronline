@@ -1,20 +1,10 @@
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use dotenv::dotenv;
-use std::env;
+use diesel::Connection;
 
-pub fn get_connection() -> PgConnection {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .expect("Database not working")
-}
+#[database("deur_db")]
+pub struct DeurDB(diesel::PgConnection);
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_get_connection() {
-        super::get_connection();
-    }
+pub fn sync_connection() -> diesel::PgConnection {
+    dotenv::dotenv().ok();
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    diesel::PgConnection::establish(&database_url).expect("Database not working")
 }

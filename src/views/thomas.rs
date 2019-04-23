@@ -1,7 +1,7 @@
 use maud::{html, Markup, DOCTYPE};
 
 #[get("/thomas/<message>")]
-fn get(message: String) -> Markup {
+pub fn get(message: String) -> Markup {
     let message = match message.as_str() {
         "delete" => "mijn account moet verwijderen thomas!",
         "admin" => "mijn adminrechten mag verwijderen thomas!",
@@ -34,4 +34,3 @@ fn get(message: String) -> Markup {
         }
     }
 }
- 

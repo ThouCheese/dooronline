@@ -1,10 +1,12 @@
+use crate::models::user::User;
 use maud::{html, Markup, DOCTYPE};
-use rocket::{response::Redirect, http::{Cookies, Cookie, }, };
-use models::User;
-
+use rocket::{
+    http::{Cookie, Cookies},
+    response::Redirect,
+};
 
 #[get("/logout")]
-fn get() -> Markup {
+pub fn get() -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -18,7 +20,7 @@ fn get() -> Markup {
                 a class="header-left" href="/" {
                     h1 { "Headeur" }
                 }
-                div class="header-right" {    
+                div class="header-right" {
                     a href="/admin" { "Admin" }
                 }
             }
@@ -42,7 +44,7 @@ poorten van 216.18.168.16 zit te gebruiken!"
 }
 
 #[post("/logout")]
-fn post(_user: User, mut cookies: Cookies) -> Redirect {
+pub fn post(_user: User, mut cookies: Cookies) -> Redirect {
     cookies.remove_private(Cookie::named("Authorization"));
     Redirect::to("/login")
 }

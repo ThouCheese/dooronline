@@ -1,7 +1,7 @@
 use maud::{html, Markup, DOCTYPE};
 
 #[catch(400)]
-fn bad_request() -> Markup {
+pub fn bad_request() -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -18,8 +18,8 @@ fn bad_request() -> Markup {
             }
             div class="main" {
                 h1 { "400 Bad Request, stop fucking with the forms!" }
-                p { 
-                    "Ik weet dat jij dit bent Thomas, en hier is mijn" 
+                p {
+                    "Ik weet dat jij dit bent Thomas, en hier is mijn"
                     a href="/ik-ben-een-flapdrol-die-met-forms-fuckt" {
                         "wraak"
                     }
@@ -30,7 +30,7 @@ fn bad_request() -> Markup {
 }
 
 #[catch(401)]
-fn unauthorized() -> Markup {
+pub fn unauthorized() -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -78,7 +78,7 @@ you will drown in it. You're fucking dead, kiddo.
 }
 
 #[catch(403)]
-fn forbidden() -> Markup {
+pub fn forbidden() -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -108,7 +108,7 @@ Admin rechten verkrijgen.... <FAILURE> klaarblijkelijk mag je niks HAHAHA zoek z
 }
 
 #[catch(404)]
-fn not_found() -> Markup {
+pub fn not_found() -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -146,7 +146,7 @@ Kijk het werkt:"
 }
 
 #[catch(422)]
-fn unprocessable() -> Markup {
+pub fn unprocessable() -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -163,13 +163,13 @@ fn unprocessable() -> Markup {
             }
             div class="main" {
                 h1 { "400 Bad Request, stop fucking with the forms!" }
-                p { 
-                    "Ik weet dat jij dit bent Thomas, en hier is mijn" 
+                p {
+                    "Ik weet dat jij dit bent Thomas, en hier is mijn"
                     a href="/ik-ben-een-flapdrol-die-met-forms-fuckt" {
                         "wraak"
                     }
                 }
-                p { 
+                p {
                     "Voetnoot: je had eigenlijk een 421, maar potaaaato potaaaaahto"
                 }
             }
@@ -178,7 +178,7 @@ fn unprocessable() -> Markup {
 }
 
 #[catch(500)]
-fn internal() -> Markup {
+pub fn internal() -> Markup {
     html! {
         (DOCTYPE)
         head {
@@ -198,7 +198,7 @@ fn internal() -> Markup {
                 h1 { "500 Internal Server Error" }
                 p { "
 De fout zit binnenin de server.... Maar waarschijnlijk is het toch jouw schuld. Beter ga je 
-nu fixen dat je geen errors meer krijgt. Voor verdere vragen, bel Remco Jelsma,
+nu fixen dat je geen catchs meer krijgt. Voor verdere vragen, bel Remco Jelsma,
 eindverantwoordelijke van deze website, op zijn persoonlijke telefoonnummer, 
 +31 6 14 10 65 71, en val je hem zo uitvoerig mogelijk lastig met nare opmerkingen en vragen 
 over al dat wat hij fout heeft gedaan aan deze site."
