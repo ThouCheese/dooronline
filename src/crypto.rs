@@ -41,7 +41,7 @@ pub fn parse_token(jwt: &str) -> Result<LoginTokenClaims, String> {
 }
 
 pub fn create_auth_token(user: &User) -> Result<String, String> {
-    let claims = LoginTokenClaims { id: user.id };
+    let claims = LoginTokenClaims { id: user.id, exp: now() + 3600 * 24 * 365 };
     let token = encode(
         &Header::default(),
         &claims,
@@ -54,7 +54,8 @@ pub fn create_auth_token(user: &User) -> Result<String, String> {
 // Struct with information used in the JWT token
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginTokenClaims {
-    pub id: i32,
+    id: i32,
+    exp: u64,
 }
 
 pub fn validate_user_token(jwt: &str) -> Option<User> {
@@ -64,3 +65,11 @@ pub fn validate_user_token(jwt: &str) -> Option<User> {
     })
     // .unwrap_or(None)
 }
+
+fn now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+}
+

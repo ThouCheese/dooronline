@@ -1,6 +1,6 @@
 use diesel::Connection;
 
-#[database("deur_db")]
+#[database("door")]
 pub struct DeurDB(diesel::PgConnection);
 
 pub fn sync_connection() -> diesel::PgConnection {
