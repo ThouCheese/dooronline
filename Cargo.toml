@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 rocket = "*"
+rocket_cors = "*"
 sysfs_gpio = "*"
 dotenv = "*"
 jwt = { package = "jsonwebtoken", version = "*" }

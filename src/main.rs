@@ -19,7 +19,9 @@ mod views;
 use rocket::{
     request::Request,
     response::{self, NamedFile, Responder, Response},
+    http::Method,
 };
+use rocket_cors::{self, AllowedHeaders, AllowedOrigins};
 use std::path::{Path, PathBuf};
 use views::*;
 
@@ -83,5 +85,27 @@ fn main() {
             ],
         )
         .attach(db::DeurDB::fairing())
+        .attach(get_cors())
         .launch();
+}
+
+fn get_cors() -> rocket_cors::Cors {
+    rocket_cors::Cors {
+        allowed_origins: AllowedOrigins::all(),
+        allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Delete]
+            .into_iter()
+            .map(From::from)
+            .collect(),
+        allowed_headers: AllowedHeaders::some(&[
+            "Authorization",
+            "Accept",
+            "Content-Type",
+            "Access-Control-Request-Headers",
+            "Access-Control-Request-Method",
+            "Origin",
+            "User-Agent",
+        ]),
+        allow_credentials: true,
+        ..Default::default()
+    }
 }
